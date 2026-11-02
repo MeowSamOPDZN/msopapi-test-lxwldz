@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MsopAPI Test — free/muse-spark-1.3</title>
+<style>
+  body { margin: 0; background: #000; color: #fafafa; font-family: Inter, system-ui, sans-serif; font-size: 14px; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p { color: #888; line-height: 1.5; }
+  label { display: block; margin: 16px 0 6px; color: #a1a1aa; }
+  input, textarea { width: 100%; box-sizing: border-box; background: #0a0a0a; border: 1px solid #1f1f1f; border-radius: 8px; color: #fafafa; padding: 10px 12px; font: inherit; }
+  textarea { min-height: 90px; resize: vertical; }
+  button { margin-top: 16px; background: #fafafa; color: #000; border: none; border-radius: 6px; padding: 10px 18px; font: inherit; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  #out { white-space: pre-wrap; background: #0a0a0a; border: 1px solid #1f1f1f; border-radius: 8px; padding: 14px; min-height: 120px; margin-top: 20px; line-height: 1.6; }
+  code { color: #d4d4d4; }
+</style>
+</head>
+<body>
+<main>
+  <h1>MsopAPI test</h1>
+  <p>Model: <code>free/muse-spark-1.3</code> via <code>https://msopapi.vercel.app/v1</code>. Paste your MsopAPI API key from the MsopAPI dashboard, type a message, and send.</p>
+  <label for="key">MsopAPI API key</label>
+  <input id="key" type="password" placeholder="sk-msop-…" autocomplete="off" />
+  <label for="msg">Message</label>
+  <textarea id="msg">Say hello in one sentence.</textarea>
+  <button id="send">Send</button>
+  <div id="out">Reply will appear here.</div>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id)
+  $('send').addEventListener('click', async () => {
+    const key = $('key').value.trim()
+    const message = $('msg').value.trim()
+    if (!key) { $('out').textContent = 'Paste your MsopAPI API key first.'; return }
+    if (!message) { $('out').textContent = 'Type a message first.'; return }
+    $('send').disabled = true
+    $('out').textContent = 'Thinking…'
+    try {
+      const res = await fetch('https://msopapi.vercel.app/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+        body: JSON.stringify({ model: 'free/muse-spark-1.3', messages: [{ role: 'user', content: message }] }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error((data.error && data.error.message) || ('Request failed: ' + res.status))
+      $('out').textContent = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || JSON.stringify(data, null, 2)
+    } catch (err) {
+      $('out').textContent = 'Error: ' + err.message
+    } finally {
+      $('send').disabled = false
+    }
+  })
+</script>
+</body>
+</html>
